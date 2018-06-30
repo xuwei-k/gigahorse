@@ -21,14 +21,7 @@ lazy val root = (project in file(".")).
       licenses := Seq("Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt")),
       scalacOptions in Compile ++= Seq(
         "-deprecation", "-Ywarn-unused", "-Ywarn-unused-import"
-      ),
-      scalacOptions in Compile := {
-        val old = (scalacOptions in Compile).value
-        scalaBinaryVersion.value match {
-          case "2.12" => old
-          case _      => old filterNot Set("-Xfatal-warnings", "-deprecation", "-Ywarn-unused", "-Ywarn-unused-import")
-        }
-      }
+      )
     )),
     name := "gigahorse",
     publish := {},
@@ -64,7 +57,7 @@ lazy val commonSettings = List(
     if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
     else Some("releases" at nexus + "service/local/staging/deploy/maven2")
   },
-  scalacOptions in (Compile, console) ~= (_ filterNot Set("-deprecation", "-Ywarn-unused", "-Ywarn-unused-import")),
+  scalacOptions ++= Seq("-deprecation", "-Ywarn-unused", "-Ywarn-unused-import"),
   fork in Test := true,
   javaOptions in Compile += "-Xmx2G"
 )
