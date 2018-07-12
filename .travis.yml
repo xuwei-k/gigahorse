@@ -13,7 +13,7 @@ script:
   - sbt "++${TRAVIS_SCALA_VERSION}! -v" test
 
 jdk:
-  - oraclejdk8
+  - oraclejdk10
 
 before_cache:
   - find $HOME/.ivy2 -name "ivydata-*.properties" -print -delete
