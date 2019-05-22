@@ -12,7 +12,7 @@ object Dependencies {
   val akkaHttpVersion = "10.1.8"
   val akkaHttpCore = "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
   val akkaHttp = "com.typesafe.akka" %% "akka-http" % akkaHttpVersion
-  val akkaStream = "com.typesafe.akka" %% "akka-stream" % "2.5.22"
+  val akkaStream = "com.typesafe.akka" %% "akka-stream" % "2.5.23"
   val okHttp = "com.squareup.okhttp3" % "okhttp" % "3.14.2"
   val unfilteredVersion = "0.9.1"
   val ufDirectives = "ws.unfiltered" %% "unfiltered-directives" % unfilteredVersion
