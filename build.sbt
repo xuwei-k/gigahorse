@@ -4,7 +4,6 @@ import Shade._
 
 ThisBuild / organization := "com.eed3si9n"
 ThisBuild / scalaVersion := scala212
-ThisBuild / crossScalaVersions := Vector(scala212, scala213, scala3)
 ThisBuild / organizationName := "eed3si9n"
 ThisBuild / organizationHomepage := Some(url("http://eed3si9n.com/"))
 ThisBuild / homepage := Some(url("https://github.com/eed3si9n/gigahorse"))
@@ -20,41 +19,22 @@ ThisBuild / licenses := Seq(License.Apache2)
 
 lazy val root = (project in file("."))
   .aggregate(
-    core,
-    apacheHttp,
-    asynchttpclient,
-    shadedAsyncHttpClient,
-    shadedApacheHttpClient5,
-    okhttp,
-    pekkoHttp
+    Seq(
+      core,
+      apacheHttp,
+      asynchttpclient,
+      shadedAsyncHttpClient,
+      shadedApacheHttpClient5,
+      okhttp,
+      pekkoHttp
+    ).flatMap(_.projectRefs)*
   )
-  .dependsOn(core)
   .settings(
     name := "gigahorse",
     publish / skip := true,
     crossScalaVersions := Nil,
     commands += Command.command("release") { state =>
-      "clean" ::
-        s"++ ${scala3}!" ::
-        "core/publishSigned" ::
-        "apacheHttp/publishSigned" ::
-        "okhttp/publishSigned" ::
-        "asynchttpclient/publishSigned" ::
-        s"++ ${scala213}!" ::
-        "core/publishSigned" ::
-        "apacheHttp/publishSigned" ::
-        "okhttp/publishSigned" ::
-        "asynchttpclient/publishSigned" ::
-        "pekkoHttp/publishSigned" ::
-        s"++ ${scala212}!" ::
-        "core/publishSigned" ::
-        "apacheHttp/publishSigned" ::
-        "shadedApacheHttpClient5/publishSigned" ::
-        "okhttp/publishSigned" ::
-        "asynchttpclient/publishSigned" ::
-        "shadedAsyncHttpClient/publishSigned" ::
-        "pekkoHttp/publishSigned" ::
-        state
+      "clean" :: "publishSigned" :: state
     }
   )
 
@@ -89,8 +69,10 @@ lazy val fatalWarnings: Seq[Setting[?]] = List(
   }),
 )
 
-lazy val core = (project in file("core"))
+lazy val core = (projectMatrix in file("core"))
   .enablePlugins(ContrabandPlugin)
+  .jvmPlatform(Vector(scala212, scala213, scala3))
+  .defaultAxes(VirtualAxis.jvm)
   .settings(
     commonSettings,
     fatalWarnings,
@@ -110,8 +92,10 @@ lazy val core = (project in file("core"))
   )
 
 lazy val testDeps = Seq(scalatest, ufDirectives, ufFilter, ufWebsockets, ufUploads)
-lazy val commonTest = (project in file("common-test"))
+lazy val commonTest = (projectMatrix in file("common-test"))
   .dependsOn(core)
+  .jvmPlatform(Vector(scala212, scala213, scala3))
+  .defaultAxes(VirtualAxis.jvm)
   .settings(
     libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always,
     libraryDependencies ++= testDeps,
@@ -155,59 +139,72 @@ lazy val commonTest = (project in file("common-test"))
 //     publishSigned := ()
 //   )
 
-lazy val apacheHttp = (project in file("apache-http"))
+lazy val apacheHttp = (projectMatrix in file("apache-http"))
   .dependsOn(core, shadedApacheHttpClient5, commonTest % Test)
+  .jvmPlatform(Vector(scala212, scala213, scala3))
+  .defaultAxes(VirtualAxis.jvm)
   .settings(
     commonSettings,
     fatalWarnings,
     name := "gigahorse-apache-http",
-    Compile / internalDependencyClasspath += (shadedApacheHttpClient5 / Compile / packageBin).value,
-    Test / internalDependencyClasspath += (shadedApacheHttpClient5 / Compile / packageBin).value,
-    crossScalaVersions := Vector(scala212, scala213, scala3),
+    Compile / internalDependencyClasspath += Def.taskDyn {
+      shadedApacheHttpClient5.jvm(scalaVersion.value) / Compile / packageBin
+    }.value,
+    Test / internalDependencyClasspath += Def.taskDyn {
+      shadedApacheHttpClient5.jvm(scalaVersion.value) / Compile / packageBin
+    }.value,
     libraryDependencies ++= testDeps.map(_ % Test),
   )
 
-lazy val okhttp = (project in file("okhttp"))
+lazy val okhttp = (projectMatrix in file("okhttp"))
   .dependsOn(core, commonTest % Test)
+  .jvmPlatform(Vector(scala212, scala213, scala3))
+  .defaultAxes(VirtualAxis.jvm)
   .settings(
     commonSettings,
     fatalWarnings,
     name := "gigahorse-okhttp",
-    crossScalaVersions := Vector(scala212, scala213, scala3),
     libraryDependencies ++= Seq(Dependencies.okHttp),
     libraryDependencies ++= testDeps.map(_ % Test),
   )
 
-lazy val asynchttpclient = (project in file("asynchttpclient"))
+lazy val asynchttpclient = (projectMatrix in file("asynchttpclient"))
   .dependsOn(core, shadedAsyncHttpClient, commonTest % Test)
+  .jvmPlatform(Vector(scala212, scala213, scala3))
+  .defaultAxes(VirtualAxis.jvm)
   .settings(
     commonSettings,
     fatalWarnings,
     name := "gigahorse-asynchttpclient",
-    Compile / externalDependencyClasspath += (shadedAsyncHttpClient / ShadeSandbox / assembly).value,
-    Test / externalDependencyClasspath += (shadedAsyncHttpClient / ShadeSandbox / assembly).value,
-    crossScalaVersions := Vector(scala212, scala213, scala3),
+    Compile / internalDependencyClasspath += Def.taskDyn {
+      shadedAsyncHttpClient.jvm(scalaVersion.value) / Compile / packageBin
+    }.value,
+    Test / internalDependencyClasspath += Def.taskDyn {
+      shadedAsyncHttpClient.jvm(scalaVersion.value) / Compile / packageBin
+    }.value,
     libraryDependencies ++= testDeps.map(_ % Test),
   )
 
-lazy val pekkoHttp = (project in file("pekko-http"))
+lazy val pekkoHttp = (projectMatrix in file("pekko-http"))
   .dependsOn(core, commonTest % Test)
+  .jvmPlatform(Vector(scala212, scala213, scala3))
+  .defaultAxes(VirtualAxis.jvm)
   .settings(
     commonSettings,
-    crossScalaVersions := Vector(scala212, scala213, scala3),
     name := "gigahorse-pekko-http",
     libraryDependencies ++= Seq(pekkoActorTyped, pekkoStream, Dependencies.pekkoHttp),
     dependencyOverrides += sslConfig,
     libraryDependencies ++= testDeps.map(_ % Test),
   )
 
-lazy val shadedApacheHttpClient5 = (project in file("shaded/apache-httpclient5"))
+lazy val shadedApacheHttpClient5 = (projectMatrix in file("shaded/apache-httpclient5"))
   .configs(ShadeSandbox)
+  .jvmPlatform(Vector(scala212, scala213, scala3))
+  .defaultAxes(VirtualAxis.jvm)
   .settings(commonSettings)
   .settings(apacheShadeSettings)
   .settings(
     name := "shaded-apache-httpclient5",
-    crossScalaVersions := Vector(scala212, scala213),
     libraryDependencies ++= Seq(
       Dependencies.httpClient5 % ShadeSandbox,
       Dependencies.jclOverSlf4j % ShadeSandbox,
@@ -216,12 +213,13 @@ lazy val shadedApacheHttpClient5 = (project in file("shaded/apache-httpclient5")
     crossPaths := false
   )
 
-lazy val shadedAsyncHttpClient = (project in file("shaded/asynchttpclient"))
+lazy val shadedAsyncHttpClient = (projectMatrix in file("shaded/asynchttpclient"))
   .configs(ShadeSandbox)
+  .jvmPlatform(Vector(scala212, scala213, scala3))
+  .defaultAxes(VirtualAxis.jvm)
   .settings(commonSettings)
   .settings(ahcShadeSettings)
   .settings(
-    crossScalaVersions := Vector(scala212, scala213),
     libraryDependencies ++= Seq(ahc % ShadeSandbox),
     name := "shaded-asynchttpclient",
     autoScalaLibrary := false,
